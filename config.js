@@ -1,3 +1,1 @@
-// Cole aqui a Project URL e a chave "anon public" (Supabase > Project Settings > API).
-// NUNCA coloque a chave service_role aqui.
-window.FQW = { SUPABASE_URL: "", SUPABASE_ANON_KEY: "" };
+window.FQW = { SUPABASE_URL: "https://yqvqegcojaaxyrhxwdhf.supabase.co", SUPABASE_ANON_KEY: "sb_publishable_uEK3Ck7-RYXw4zij4l7DTg_OVk8AGX4" };
