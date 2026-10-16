@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FOOTBALL QUIZ WORLD</title>
+<style>
+:root{--bg:#08090a;--card:#141618;--line:#262a2d;--tx:#f4f6f5;--mu:#8b9490;--lime:#c6ff1a;--bad:#ff5252;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(900px 400px at 80% -10%,#1d2a05 0,transparent 60%),var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:flex;align-items:center;gap:12px;padding:12px 16px;background:#08090af0;backdrop-filter:blur(8px);border-bottom:1px solid var(--line);flex-wrap:wrap}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:#08090a;z-index:10}
+.logo{font-weight:900;letter-spacing:1px;font-size:15px;cursor:pointer}.logo b{color:var(--lime)}
+nav{display:flex;gap:4px;margin-left:auto;overflow-x:auto}
+nav button{background:none;border:0;color:var(--mu);font:600 13px inherit;padding:8px 10px;border-radius:8px;cursor:pointer;white-space:nowrap}
+nav button.on,nav button:hover{color:var(--lime);background:#ffffff0a}
+main{max-width:900px;margin:0 auto;padding:18px 16px 60px}
+h1{font-size:clamp(28px,7vw,46px);line-height:1.05;margin:8px 0;font-weight:900}h1 em{color:var(--lime);font-style:normal}
+h2{font-size:18px;margin:26px 0 10px}
+.mu{color:var(--mu);font-size:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.cat{cursor:pointer;transition:.2s;text-align:left;color:inherit;font:inherit}.cat:hover,.cat.sel{border-color:var(--lime);box-shadow:0 0 18px #c6ff1a30;transform:translateY(-2px)}
+.cat .i{font-size:28px}.cat b{display:block;margin-top:6px}
+.btn{background:var(--lime);color:#0a0c00;border:0;font:800 15px inherit;padding:14px 24px;border-radius:999px;cursor:pointer;box-shadow:0 0 24px #c6ff1a55;transition:.2s}.btn:hover{transform:scale(1.04)}
+.btn.g{background:#ffffff10;color:var(--tx);box-shadow:none;border:1px solid var(--line)}
+.hero{padding:22px 4px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.stat b{display:block;font-size:24px;color:var(--lime)}
+.opt{display:block;width:100%;text-align:left;margin:8px 0;padding:14px;border-radius:12px;border:1px solid var(--line);background:#ffffff06;color:var(--tx);font:600 15px inherit;cursor:pointer;transition:.15s}
+.opt:hover{border-color:var(--lime)}.opt.ok{background:#c6ff1a25;border-color:var(--lime)}.opt.no{background:#ff525225;border-color:var(--bad)}
+.bar{height:6px;background:var(--line);border-radius:9px;overflow:hidden}.bar i{display:block;height:100%;background:var(--lime);transition:width .3s linear}
+.top{display:flex;justify-content:space-between;font-size:13px;color:var(--mu);margin-bottom:8px}
+.big{font-size:56px;text-align:center;margin:10px 0}
+.row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}.row:last-child{border:0}
+.pos{width:28px;font-weight:900;color:var(--mu)}.p1{color:#ffd700}.p2{color:#d0d6dc}.p3{color:#e08a4a}
+.badge{display:inline-block;padding:4px 10px;border-radius:99px;background:#c6ff1a1a;color:var(--lime);font-size:12px;margin:3px;font-weight:700}.badge.off{background:#ffffff0a;color:var(--mu);filter:grayscale(1)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.chip{padding:8px 14px;border-radius:99px;border:1px solid var(--line);background:none;color:var(--tx);font:600 13px inherit;cursor:pointer}.chip.sel{background:var(--lime);color:#000;border-color:var(--lime)}
+input{background:#ffffff0a;border:1px solid var(--line);color:var(--tx);border-radius:10px;padding:10px;font:inherit;width:100%}
+.exp{margin-top:12px;font-size:14px;color:var(--mu)}
+@media(max-width:560px){nav{width:100%;margin:0}}
+</style></head><body>
+<header><div class="logo" onclick="go('home')">⚽ FOOTBALL <b>QUIZ</b> WORLD</div>
+<nav id="nav"></nav></header>
+<main id="app"></main>
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+const CATS={clubes:['🛡️','Clubes e escudos'],jogadores:['🧑‍🎤','Jogadores'],selecoes:['🏳️','Seleções'],competicoes:['🏆','Competições'],historia:['📜','História e recordes']};
+const MODES={classico:['Clássico','10 perguntas, 15s cada'],cronometro:['Cronômetro','Tempo corre mais rápido: 8s'],sobrevivencia:['Sobrevivência','Jogue até errar'],diario:['Desafio do dia','Mesmas 10 perguntas para todos hoje']};
+// [categoria, dificuldade(1-4), pergunta, opções, índice correto, explicação]
+const Q=[
+['selecoes',1,'Qual seleção venceu a Copa do Mundo de 2022?',['França','Argentina','Croácia','Brasil'],1,'A Argentina venceu a França nos pênaltis na final, no Catar.'],
+['selecoes',1,'Qual seleção tem mais títulos da Copa do Mundo masculina?',['Alemanha','Itália','Brasil','Argentina'],2,'O Brasil é pentacampeão (1958, 1962, 1970, 1994 e 2002).'],
+['competicoes',1,'Em que país foi disputada a Copa do Mundo de 2014?',['África do Sul','Brasil','Rússia','Alemanha'],1,'A Copa de 2014 foi no Brasil; a Alemanha foi campeã.'],
+['historia',2,'Quem é o maior artilheiro da história das Copas do Mundo masculinas (até 2022)?',['Ronaldo Fenômeno','Pelé','Miroslav Klose','Gerd Müller'],2,'Klose marcou 16 gols em Copas, recorde mantido até a edição de 2022.'],
+['selecoes',2,'Qual seleção foi a campeã da primeira Copa do Mundo, em 1930?',['Argentina','Uruguai','Brasil','Itália'],1,'O Uruguai venceu a Argentina por 4 a 2 em Montevidéu.'],
+['competicoes',1,'Qual clube tem mais títulos da UEFA Champions League/Copa dos Campeões?',['Milan','Bayern de Munique','Liverpool','Real Madrid'],3,'O Real Madrid é o maior campeão do torneio, com 15 títulos até 2024.'],
+['competicoes',2,'Qual clube tem mais títulos da Copa Libertadores?',['Boca Juniors','Independiente','Peñarol','River Plate'],1,'O Independiente (Argentina) foi campeão 7 vezes.'],
+['clubes',2,'Qual clube foi campeão invicto da Premier League em 2003-04?',['Chelsea','Manchester United','Arsenal','Liverpool'],2,'O Arsenal, de Arsène Wenger, ficou conhecido como "The Invincibles".'],
+['competicoes',1,'Quem venceu a Eurocopa de 2024?',['Inglaterra','Espanha','França','Alemanha'],1,'A Espanha venceu a Inglaterra na final, em Berlim.'],
+['competicoes',1,'Quem venceu a Copa América de 2024?',['Colômbia','Brasil','Argentina','Uruguai'],2,'A Argentina venceu a Colômbia na final, nos EUA.'],
+['selecoes',2,'Em qual país Pelé conquistou sua primeira Copa, em 1958?',['México','Suécia','Chile','Inglaterra'],1,'Pelé tinha 17 anos e foi campeão na Suécia.'],
+['historia',3,'Qual é a maior goleada da história das Copas do Mundo masculinas (placar da vitória)?',['Hungria 10 x 1 El Salvador','Brasil 9 x 0 Haiti','Alemanha 8 x 0 Arábia Saudita','Áustria 7 x 5 Suíça'],0,'Hungria 10 x 1 El Salvador, em 1982, é o maior placar de vitória em Copas.'],
+['selecoes',2,'Qual seleção foi campeã da primeira Copa do Mundo feminina, em 1991?',['Noruega','Alemanha','Estados Unidos','Suécia'],2,'Os EUA venceram a Noruega por 2 a 1 na China.'],
+['jogadores',2,'Quantas Bolas de Ouro Lionel Messi havia conquistado até 2023?',['6','7','8','9'],2,'Messi ganhou em 2009, 2010, 2011, 2012, 2015, 2019, 2021 e 2023.'],
+['selecoes',1,'De qual país é esta bandeira? 🇯🇵',['China','Coreia do Sul','Japão','Vietnã'],2,'Bandeira do Japão.'],
+['selecoes',1,'De qual país é esta bandeira? 🇭🇷',['Croácia','Sérvia','Eslováquia','Rússia'],0,'Croácia, vice-campeã em 2018 e terceira em 2022.'],
+['selecoes',2,'De qual país é esta bandeira? 🇲🇦',['Tunísia','Turquia','Argélia','Marrocos'],3,'Marrocos foi a primeira seleção africana em uma semifinal de Copa, em 2022.'],
+['selecoes',1,'De qual país é esta bandeira? 🇨🇭',['Suíça','Dinamarca','Áustria','Inglaterra'],0,'Bandeira da Suíça.'],
+['jogadores',2,'Em quantas Copas do Mundo Pelé foi campeão?',['2','3','4','5'],1,'Em 1958, 1962 e 1970.'],
+['clubes',1,'Qual clube manda seus jogos no estádio Old Trafford?',['Manchester City','Liverpool','Manchester United','Everton'],2,'Old Trafford é a casa do Manchester United.'],
+['clubes',1,'Qual clube joga no estádio Anfield?',['Liverpool','Chelsea','Arsenal','Tottenham'],0,'Anfield fica em Liverpool e é a casa do Liverpool FC.'],
+['clubes',1,'Qual clube joga no Camp Nou?',['Real Madrid','Atlético de Madrid','Valencia','Barcelona'],3,'O Camp Nou é a casa do FC Barcelona.'],
+['competicoes',2,'Qual clube tem mais títulos da Ligue 1 francesa?',['Olympique de Marseille','Paris Saint-Germain','Saint-Étienne','Lyon'],1,'O PSG é o maior campeão da Ligue 1.'],
+['competicoes',2,'Qual clube tem mais títulos da Serie A italiana?',['Milan','Inter de Milão','Juventus','Napoli'],2,'A Juventus lidera em títulos da Serie A.'],
+['competicoes',1,'Qual clube tem mais títulos da Bundesliga?',['Borussia Dortmund','Bayern de Munique','Werder Bremen','Schalke 04'],1,'O Bayern de Munique é o maior campeão alemão.'],
+['competicoes',2,'Qual clube é o maior campeão do Brasileirão (contagem da CBF)?',['Flamengo','Corinthians','Palmeiras','Santos'],2,'O Palmeiras lidera a contagem da CBF. O número muda a cada temporada.'],
+['historia',2,'Em 1986, contra qual seleção Maradona marcou o gol da "Mão de Deus"?',['Inglaterra','Alemanha','Bélgica','Brasil'],0,'Foi nas quartas de final, no Estádio Azteca, México.'],
+['historia',3,'Em que cidade fica o estádio do Maracanã?',['São Paulo','Rio de Janeiro','Belo Horizonte','Brasília'],1,'O Maracanã fica no Rio de Janeiro e foi palco das finais de 1950 e 2014.'],
+['clubes',2,'Em qual estádio o Bayern de Munique joga?',['Signal Iduna Park','Allianz Arena','Olympiastadion','Veltins-Arena'],1,'A Allianz Arena é a casa do Bayern desde 2005.'],
+['clubes',1,'Qual clube é apelidado de "Los Blancos"?',['Real Madrid','Valencia','Sevilla','Atlético de Madrid'],0,'O branco do uniforme deu o apelido ao Real Madrid.','c:#fff:#e8e8e8:RM'],
+['clubes',1,'Qual clube inglês é conhecido como "Red Devils"?',['Liverpool','Manchester United','Arsenal','Nottingham Forest'],1,'Red Devils é o apelido do Manchester United.','c:#da020e:#a00:MUN'],
+['clubes',1,'Qual clube italiano é chamado de "Velha Senhora"?',['Roma','Lazio','Juventus','Torino'],2,'La Vecchia Signora é a Juventus, de camisa listrada preta e branca.','c:#000:#fff:JUV'],
+['clubes',2,'Qual clube foi fundado por Joan Gamper em 1899?',['Espanyol','Barcelona','Real Madrid','Valencia'],1,'Gamper fundou o FC Barcelona em 29 de novembro de 1899.','c:#004d98:#a50044:FCB'],
+['clubes',1,'Quais são as cores principais do uniforme do Flamengo?',['Verde e branco','Azul e branco','Vermelho e preto','Preto e branco'],2,'O Flamengo é conhecido pelo rubro-negro.','c:#c8102e:#000:FLA'],
+['clubes',2,'Qual clube brasileiro venceu o Liverpool na final do Mundial de 1981?',['Santos','Flamengo','Grêmio','São Paulo'],1,'O Flamengo venceu por 3 a 0, em Tóquio.'],
+['clubes',2,'Qual clube o Corinthians derrotou na final do Mundial de Clubes de 2012?',['Bayern de Munique','Real Madrid','Chelsea','Barcelona'],2,'O Corinthians venceu o Chelsea por 1 a 0, com gol de Guerrero.'],
+['clubes',3,'Quantos títulos mundiais (Intercontinental e Mundial FIFA) o São Paulo possui?',['1','2','3','4'],2,'O São Paulo foi campeão em 1992, 1993 e 2005.'],
+['clubes',2,'Qual clube joga no estádio Santiago Bernabéu?',['Real Madrid','Barcelona','Atlético de Madrid','Sevilla'],0,'O Bernabéu fica em Madri e é a casa do Real Madrid.'],
+['clubes',3,'Em qual cidade ocorre o clássico "Old Firm", entre Celtic e Rangers?',['Edimburgo','Glasgow','Dundee','Aberdeen'],1,'Celtic e Rangers são de Glasgow, na Escócia.'],
+['clubes',2,'Qual estádio é compartilhado por Milan e Inter de Milão?',['San Siro','Allianz Stadium','Olímpico','Maradona'],0,'O San Siro, oficialmente Giuseppe Meazza, é usado pelos dois clubes.'],
+['jogadores',2,'Quantas Bolas de Ouro Cristiano Ronaldo havia conquistado até 2023?',['3','4','5','6'],2,'Ele ganhou em 2008, 2013, 2014, 2016 e 2017.'],
+['jogadores',2,'Em que ano Ronaldinho Gaúcho conquistou a Bola de Ouro?',['2004','2005','2006','2007'],1,'Ronaldinho foi eleito o melhor do mundo em 2005, pelo Barcelona.'],
+['jogadores',2,'Qual brasileiro ganhou a Bola de Ouro em 2007?',['Kaká','Ronaldinho','Robinho','Adriano'],0,'Kaká era do Milan e foi campeão da Champions em 2006-07.'],
+['jogadores',2,'Quantos gols Zidane marcou na final da Copa de 1998, contra o Brasil?',['1','2','3','0'],1,'Ele marcou duas vezes de cabeça; a França venceu por 3 a 0.'],
+['jogadores',2,'Por qual clube italiano Maradona foi campeão nacional?',['Juventus','Napoli','Roma','Inter de Milão'],1,'O Napoli foi campeão italiano em 1986-87 e 1989-90.'],
+['jogadores',3,'Quantos gols Messi marcou na Copa do Mundo de 2022?',['5','6','7','8'],2,'Messi fez 7 gols e foi eleito o melhor jogador do torneio.'],
+['jogadores',2,'Quantos gols Mbappé marcou na final da Copa de 2022?',['1','2','3','4'],2,'Mbappé fez três gols e foi o artilheiro do torneio, com 8.'],
+['jogadores',3,'Quantas vezes Marta foi eleita melhor jogadora do mundo pela FIFA?',['4','5','6','7'],2,'Seis vezes: cinco seguidas (2006 a 2010) e em 2018.'],
+['jogadores',3,'Qual é o único goleiro a ganhar a Bola de Ouro?',['Gianluigi Buffon','Lev Yashin','Manuel Neuer','Oliver Kahn'],1,'O soviético Lev Yashin venceu em 1963.'],
+['jogadores',3,'Por qual valor Neymar foi transferido ao PSG em 2017?',['€ 150 milhões','€ 180 milhões','€ 222 milhões','€ 250 milhões'],2,'A multa de 222 milhões de euros foi paga ao Barcelona.'],
+['selecoes',1,'Qual seleção venceu a Copa do Mundo de 2018?',['Croácia','França','Bélgica','Brasil'],1,'A França venceu a Croácia por 4 a 2, na Rússia.'],
+['selecoes',2,'Quem foi o campeão da Copa de 2010, na África do Sul?',['Holanda','Alemanha','Uruguai','Espanha'],3,'A Espanha venceu a Holanda por 1 a 0, com gol de Iniesta.'],
+['selecoes',2,'Quais países sediaram juntos a Copa do Mundo de 2002?',['Japão e Coreia do Sul','China e Japão','Tailândia e Vietnã','Coreia do Sul e China'],0,'Foi a primeira Copa em dois países; o Brasil foi pentacampeão.'],
+['selecoes',1,'Qual placar a Alemanha aplicou no Brasil na semifinal da Copa de 2014?',['5 a 0','7 a 1','6 a 2','4 a 0'],1,'Foi 7 a 1, no Mineirão, em Belo Horizonte.'],
+['selecoes',3,'Qual Copa deu ao Brasil a posse definitiva da Taça Jules Rimet?',['1958','1962','1970','1994'],2,'O tricampeonato de 1970, no México, garantiu a taça ao Brasil.'],
+['selecoes',1,'De qual país é esta bandeira?',['Bélgica','Países Baixos','Luxemburgo','França'],1,'Bandeira dos Países Baixos (Holanda).','🇳🇱'],
+['selecoes',2,'De qual país é esta bandeira?',['Senegal','Mali','Gana','Camarões'],0,'Bandeira do Senegal, com estrela verde ao centro.','🇸🇳'],
+['selecoes',1,'De qual país é esta bandeira?',['Paraguai','Uruguai','Argentina','Chile'],1,'Bandeira do Uruguai, bicampeão mundial (1930 e 1950).','🇺🇾'],
+['competicoes',2,'Qual clube tem mais títulos da Premier League?',['Manchester City','Liverpool','Arsenal','Manchester United'],3,'O Manchester United tem 20 títulos ingleses da era da liga principal.'],
+['competicoes',1,'Qual clube tem mais títulos de La Liga?',['Barcelona','Real Madrid','Atlético de Madrid','Athletic Bilbao'],1,'O Real Madrid é o maior campeão espanhol.'],
+['competicoes',2,'Qual clube venceu a Libertadores de 2023?',['Boca Juniors','Fluminense','Flamengo','Palmeiras'],1,'O Fluminense venceu o Boca no Maracanã e foi campeão pela 1ª vez.'],
+['competicoes',3,'Qual clube ganhou a Champions League 2022-23, vencendo a Inter na final?',['Real Madrid','Manchester City','Bayern de Munique','Chelsea'],1,'O City venceu por 1 a 0, em Istambul, e levou o troféu pela 1ª vez.'],
+['competicoes',2,'Quem venceu a Copa do Mundo feminina de 2023?',['Inglaterra','Estados Unidos','Espanha','Suécia'],2,'A Espanha venceu a Inglaterra por 1 a 0, na Austrália.'],
+['competicoes',2,'Qual seleção venceu a Eurocopa disputada em 2021?',['Itália','Inglaterra','Espanha','Bélgica'],0,'A Itália venceu a Inglaterra nos pênaltis, em Wembley.'],
+['historia',2,'Quem é o maior artilheiro da história da Champions League?',['Lionel Messi','Karim Benzema','Cristiano Ronaldo','Robert Lewandowski'],2,'Cristiano Ronaldo lidera, com 140 gols.'],
+['historia',3,'Quem marcou 13 gols na Copa de 1958, recorde de uma única edição?',['Pelé','Just Fontaine','Sándor Kocsis','Garrincha'],1,'O francês Just Fontaine fez 13 gols, marca ainda não superada.'],
+['historia',3,'Qual seleção foi a primeira campeã da Eurocopa, em 1960?',['Espanha','Iugoslávia','União Soviética','França'],2,'A União Soviética venceu a Iugoslávia na final, em Paris.'],
+['historia',4,'Qual clube foi o primeiro campeão da Copa Libertadores, em 1960?',['Peñarol','Santos','Boca Juniors','Nacional'],0,'O Peñarol, do Uruguai, venceu o Olimpia na final.'],
+['historia',3,'Qual clube venceu a Premier League 2015-16 como azarão?',['Tottenham','Leicester City','Everton','West Ham'],1,'O Leicester, de Claudio Ranieri, foi campeão inglês pela única vez.'],
+['historia',4,'Em que ano foi fundada a FIFA?',['1894','1904','1914','1924'],1,'A FIFA foi criada em Paris, em 1904.'],
+['historia',4,'Quem foi o campeão da final de 1950, no Maracanã?',['Brasil','Uruguai','Suécia','Espanha'],1,'O Uruguai venceu por 2 a 1, no jogo conhecido como Maracanazo.']
+];
+const LV=[0,200,500,1000,1800,3000,5000,8000];
+const ACH=[['Novato da Bola','Jogue 1 partida',s=>s.games.length>=1],['Invicto','Acerte tudo em um quiz',s=>s.games.some(g=>g.ok==g.n&&g.n>=5)],['Sequência 7','7 acertos seguidos',s=>s.games.some(g=>g.streak>=7)],['Rei dos Recordes','Faça 1500+ pontos',s=>s.games.some(g=>g.score>=1500)],['Conhecedor','100 acertos no total',s=>s.games.reduce((a,g)=>a+g.ok,0)>=100],['Gênio do Futebol','Chegue ao nível 5',s=>lvl(s.xp)>=5]];
+const $=id=>document.getElementById(id),app=$('app');
+let S={name:'Jogador',xp:0,games:[],fav:{}},G=null,tm=null,view='home',pick={cat:'todas',mode:'classico'};
+try{S=Object.assign(S,JSON.parse(localStorage.getItem('fqw')||'{}'))}catch(e){}
+const save=()=>{try{localStorage.setItem('fqw',JSON.stringify(S))}catch(e){}};
+const lvl=x=>{let l=1;LV.forEach((v,i)=>{if(x>=v)l=i+1});return l};
+const shuf=(a,r=Math.random)=>{a=[...a];for(let i=a.length-1;i>0;i--){let j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const seed=()=>{let h=0;for(const c of new Date().toISOString().slice(0,10))h=(h*31+c.charCodeAt(0))|0;return()=>{h=(h*1664525+1013904223)|0;return((h>>>0)%10000)/10000}};
+const best=()=>Math.max(0,...S.games.map(g=>g.score));
+function nav(){const t=[['home','Início'],['play','Jogar'],['rank','Ranking'],['me','Perfil']];$('nav').innerHTML=t.map(([k,n])=>`<button class="${view==k?'on':''}" onclick="go('${k}')">${n}</button>`).join('')+(SB?(ME?`<button onclick="logout()">Sair (${esc(ME.username)})</button>`:`<button class="${view=='auth'?'on':''}" onclick="go('auth')">Entrar</button>`):'')}
+function go(v){clearInterval(tm);view=v;nav();scrollTo(0,0);({home,play,rank,me,auth})[v]()}
+function home(){const g=S.games,ok=g.reduce((a,x)=>a+x.ok,0),n=g.reduce((a,x)=>a+x.n,0);
+app.innerHTML=`<div class="hero"><div class="mu">O mundo do futebol. O seu conhecimento. O seu recorde.</div><h1>Quanto você sabe de <em>futebol</em>?</h1><button class="btn" onclick="go('play')">JOGAR AGORA</button></div>
+<div class="card" style="margin-top:14px;border-color:#c6ff1a60"><b>🔥 Desafio do dia</b><p class="mu">10 perguntas novas hoje, iguais para todos. Quanto você faz?</p><button class="btn g" onclick="pick={cat:'todas',mode:'diario'};start()">Aceitar desafio</button></div>
+<h2>Categorias</h2><div class="grid">${Object.entries(CATS).map(([k,[i,n]])=>`<button class="card cat" onclick="pick.cat='${k}';go('play')"><span class="i">${i}</span><b>${n}</b><span class="mu">Novos desafios</span></button>`).join('')}</div>
+<h2>Suas estatísticas</h2><div class="stats"><div class="card stat"><b>${g.length}</b>partidas</div><div class="card stat"><b>${best()}</b>recorde</div><div class="card stat"><b>${n?Math.round(ok/n*100):0}%</b>aproveitamento</div><div class="card stat"><b>Nv ${lvl(S.xp)}</b>${S.xp} XP</div></div>`}
+function play(){app.innerHTML=`<h1>Escolha seu <em>jogo</em></h1><h2>Modo</h2><div class="grid">${Object.entries(MODES).map(([k,[n,d]])=>`<button class="card cat ${pick.mode==k?'sel':''}" onclick="pick.mode='${k}';play()"><b>${n}</b><span class="mu">${d}</span></button>`).join('')}</div>
+<h2>Categoria</h2><div class="chips">${['todas',...Object.keys(CATS)].map(k=>`<button class="chip ${pick.cat==k?'sel':''}" onclick="pick.cat='${k}';play()">${k=='todas'?'Todas':CATS[k][1]}</button>`).join('')}</div><br><button class="btn" onclick="start()">COMEÇAR</button>`}
+function start(){if(SB&&ME)return startOnline();let pool=pick.cat=='todas'||pick.mode=='diario'?Q:Q.filter(q=>q[0]==pick.cat);
+let qs;if(pick.mode=='diario')qs=shuf(Q,seed());else{S.seen=S.seen||[];const ids=pool.map(q=>Q.indexOf(q));let fr=ids.filter(i=>!S.seen.includes(i));if(fr.length<10){fr=ids;S.seen=S.seen.filter(i=>!ids.includes(i))}qs=shuf(fr).concat(shuf(ids.filter(i=>!fr.includes(i)))).map(i=>Q[i])}if(pick.mode!='sobrevivencia')qs=qs.slice(0,10);
+G={qs,i:0,score:0,ok:0,streak:0,maxS:0,mode:pick.mode,cat:pick.cat,t0:Date.now(),lock:false,T:pick.mode=='cronometro'?8:15};view='quiz';nav();ask()}
+function ask(){const q=G.qs[G.i];G.t=G.T;G.lock=false;const o=q[3].map((t,i)=>[t,i]);const sh=shuf(o);
+app.innerHTML=`<div class="top"><span>${CATS[q[0]][1]} · ${['','Fácil','Médio','Difícil','Especialista'][q[1]]}</span><span>⭐ ${G.score} · 🔥 ${G.streak}</span></div>
+<div class="bar"><i id="tb" style="width:100%"></i></div><div class="top" style="margin-top:6px"><span>Pergunta ${G.i+1}${G.mode=='sobrevivencia'?'':' / '+G.qs.length}</span><span id="tt">${G.t}s</span></div>
+<div class="card">${vis(q[6])}<h2 style="margin-top:0">${q[2]}</h2><div id="ops">${sh.map(([t,i])=>`<button class="opt" data-i="${i}" onclick="ans(${i})">${t}</button>`).join('')}</div><div id="ex"></div></div>`;
+clearInterval(tm);const s=Date.now();tm=setInterval(()=>{G.t=Math.max(0,G.T-(Date.now()-s)/1000);$('tb').style.width=G.t/G.T*100+'%';$('tt').textContent=Math.ceil(G.t)+'s';if(G.t<=0)ans(-1)},100)}
+function ans(i){if(G.lock)return;G.lock=true;clearInterval(tm);if(G.mid)return ansOnline(i);const q=G.qs[G.i],ok=i==q[4];
+if(ok){G.streak++;G.maxS=Math.max(G.maxS,G.streak);G.ok++;G.score+=100+Math.round(G.t*5)+Math.min(G.streak,10)*10}else G.streak=0;
+document.querySelectorAll('.opt').forEach(b=>{const k=+b.dataset.i;if(k==q[4])b.classList.add('ok');else if(k==i)b.classList.add('no')});
+const last=G.i+1>=G.qs.length||(G.mode=='sobrevivencia'&&!ok);
+$('ex').innerHTML=`<div class="exp">${i<0?'⏰ Tempo esgotado. ':ok?'✅ Correto! ':'❌ Errou. '}${q[5]}</div><br><button class="btn" onclick="${last?'finish()':'G.i++;ask()'}">${last?'Ver resultado':'Próxima'}</button>`}
+function finish(){if(G.mid)return finishOnline();const g=G,xp=Math.round(g.score/4)+g.ok*5,n=g.i+1,prevBest=best(),prevAch=ACH.filter(a=>a[2](S)).length;
+S.xp+=xp;S.seen=(S.seen||[]).concat(g.qs.slice(0,g.i+1).map(q=>Q.indexOf(q))).slice(-400);S.games.unshift({d:Date.now(),mode:g.mode,cat:g.cat,score:g.score,ok:g.ok,n,streak:g.maxS,time:Math.round((Date.now()-g.t0)/1000)});S.games=S.games.slice(0,100);save();pushOnline();
+const newA=ACH.filter(a=>a[2](S)).length-prevAch,rec=g.score>prevBest&&prevBest>0;
+app.innerHTML=`<div class="big">${g.ok==n?'🏆':g.ok/n>.6?'⚽':'🥅'}</div><h1 style="text-align:center">${g.score} <em>pts</em></h1>
+<p class="mu" style="text-align:center">${g.ok}/${n} acertos · maior sequência ${g.maxS} · +${xp} XP${rec?' · 🎉 NOVO RECORDE!':''}${newA>0?' · 🏅 conquista desbloqueada!':''}</p>
+<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><button class="btn" onclick="start()">Jogar de novo</button><button class="btn g" onclick="share(${g.score},${g.ok},${n})">Compartilhar</button><button class="btn g" onclick="go('rank')">Ranking</button></div>${SB&&!ME?'<p class="mu" style="text-align:center">🔒 <a href="#" style="color:var(--lime)" onclick="go(\'auth\');return false">Entre</a> para salvar este resultado no ranking mundial.</p>':''}`}
+function share(s,o,n){const t=`Fiz ${s} pontos (${o}/${n}) no FOOTBALL QUIZ WORLD! Consegue me superar?`;if(navigator.share)navigator.share({text:t}).catch(()=>{});else{try{navigator.clipboard.writeText(t);alert('Resultado copiado!')}catch(e){alert(t)}}}
+function rank(){setTimeout(SB?rankSB:rankOnline,0);const top=[...S.games].sort((a,b)=>b.score-a.score).slice(0,10),wk=Date.now()-6048e5;
+app.innerHTML=`<h1>Ranking <em>mundial</em></h1><div id="gl" class="card"><p class="mu">Carregando…</p></div><h2>Seus recordes</h2>
+<div class="card">${top.length?top.map((g,i)=>`<div class="row"><span class="pos p${i+1}">${i+1}</span><div style="flex:1"><b>${g.score} pts</b><div class="mu">${MODES[g.mode][0]} · ${g.cat=='todas'?'Todas':CATS[g.cat][1]} · ${new Date(g.d).toLocaleDateString('pt-BR')}</div></div><span class="mu">${g.ok}/${g.n}</span></div>`).join(''):'<p class="mu">Jogue uma partida para entrar no ranking.</p>'}</div>
+<h2>Recordes pessoais</h2><div class="stats"><div class="card stat"><b>${best()}</b>maior pontuação</div><div class="card stat"><b>${Math.max(0,...S.games.map(g=>g.streak))}</b>maior sequência</div><div class="card stat"><b>${S.games.filter(g=>g.d>wk).length}</b>partidas na semana</div></div>`}
+function me(){if(SB&&ME)return meOnline();const l=lvl(S.xp),nx=LV[l]||null;
+app.innerHTML=`<h1>Seu <em>perfil</em></h1><div class="card"><label class="mu">Nome de usuário</label><input id="nm" value="${S.name.replace(/"/g,'')}" maxlength="20" onchange="S.name=this.value||'Jogador';save();pushOnline()"><p><b>Nível ${l}</b> · ${S.xp} XP${nx?` · faltam ${nx-S.xp} para o nível ${l+1}`:''}</p><div class="bar"><i style="width:${nx?Math.min(100,(S.xp-LV[l-1])/(nx-LV[l-1])*100):100}%"></i></div></div>
+<h2>Recordes e estatísticas</h2><div class="stats"><div class="card stat"><b>${best()}</b>melhor pontuação</div><div class="card stat"><b>${Math.max(0,...S.games.map(g=>g.streak))}</b>maior sequência</div><div class="card stat"><b>${S.games.length}</b>partidas</div><div class="card stat"><b>${(t=>t?Math.round(S.games.reduce((a,g)=>a+g.ok,0)/t*100):0)(S.games.reduce((a,g)=>a+g.n,0))}%</b>aproveitamento</div></div><h2>Conquistas</h2><div>${ACH.map(a=>`<span class="badge ${a[2](S)?'':'off'}" title="${a[1]}">🏅 ${a[0]}</span>`).join('')}</div><p class="mu">Passe o dedo/mouse sobre uma medalha para ver o critério.</p>
+<h2>Histórico</h2><div class="card">${S.games.slice(0,10).map(g=>`<div class="row"><div style="flex:1"><b>${g.score} pts</b><div class="mu">${MODES[g.mode][0]} · ${new Date(g.d).toLocaleDateString('pt-BR')}</div></div><span class="mu">${g.ok}/${g.n}</span></div>`).join('')||'<p class="mu">Nenhuma partida ainda.</p>'}</div>`}
+let DB=null,UID=null,PERR=0;const vis=v=>!v?'':v.startsWith('c:')?(p=>`<div style="width:84px;height:84px;margin:0 auto 10px;border-radius:50%;background:linear-gradient(90deg,${p[1]} 50%,${p[2]} 50%);display:grid;place-items:center;border:3px solid #fff3;font:900 20px inherit;color:#fff;text-shadow:0 1px 3px #000">${p[3]}</div>`)(v.split(':')):`<div style="font-size:64px;text-align:center">${v}</div>`;
+const wkNum=()=>Math.floor(Date.now()/6048e5);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+(async()=>{try{const [d,u]=await Promise.all([claude.use('db'),claude.use('user')]);if(d&&u){DB=d;UID=String(await u.id())}}catch(e){}})();
+async function pushOnline(){if(!DB||!UID||!S.games.length)return;try{const ref=DB.collection('scores').doc(UID),o=await ref.get(),p=o.exists?o.data():{},w=wkNum(),wb=p.wk==w?p.wkBest||0:0,wk=Math.max(wb,0,...S.games.filter(g=>Math.floor(g.d/6048e5)==w).map(g=>g.score));
+await ref.set({name:S.name,best:Math.max(p.best||0,best()),wk:w,wkBest:wk,xp:Math.max(p.xp||0,S.xp),games:Math.max(p.games||0,S.games.length)});PERR=0}catch(e){PERR=1}}
+async function rankOnline(){const el=$('gl');if(!el)return;
+for(let i=0;i<20&&!DB;i++)await new Promise(r=>setTimeout(r,150));
+if(!DB){el.innerHTML='<p class="mu">Ranking mundial indisponível aqui. Abra a página logado no Claude para participar.</p>';return}
+await pushOnline();try{const w=wkNum(),mp=s=>s.docs.map(d=>({id:d.id,...d.data()})),L=mp(await DB.collection('scores').orderBy('best','desc').limit(30).get()),LW=mp(await DB.collection('scores').where('wk','==',w).limit(50).get());
+const draw=t=>{const l=t=='w'?LW.map(x=>({...x,v:x.wkBest})).sort((a,b)=>b.v-a.v):L.map(x=>({...x,v:x.best}));
+el.innerHTML=(PERR?'<p class="mu">⚠️ Sua pontuação não foi enviada: seu acesso é somente leitura.</p>':'')+`<div class="chips"><button class="chip ${t=='g'?'sel':''}" onclick="G2('g')">Global</button><button class="chip ${t=='w'?'sel':''}" onclick="G2('w')">Semanal</button></div>`+(l.length?l.map((x,i)=>`<div class="row"><span class="pos p${i+1}">${i+1}</span><div style="flex:1"><b>${esc(x.name)}${x.id==UID?' (você)':''}</b><div class="mu">Nv ${lvl(x.xp||0)} · ${x.games||0} partidas</div></div><b style="color:var(--lime)">${x.v}</b></div>`).join(''):'<p class="mu">Ninguém ainda. Jogue uma partida!</p>')};
+window.G2=draw;draw('g')}catch(e){el.innerHTML='<p class="mu">Não foi possível carregar o ranking agora.</p>'}}
+let SB=null,ME=null;
+try{if(window.FQW&&FQW.SUPABASE_URL&&FQW.SUPABASE_ANON_KEY&&window.supabase)SB=supabase.createClient(FQW.SUPABASE_URL,FQW.SUPABASE_ANON_KEY)}catch(e){}
+const em=e=>({login_required:'Faça login para jogar online.',rate_limited:'Muitas partidas seguidas. Aguarde um minuto.',daily_done:'Você já completou o Desafio do dia hoje.',too_fast:'Calma! Resposta rápida demais.',invalid_name:'Nome inválido ou já em uso.'}[e.message]||e.message||'Erro inesperado');
+async function initAuth(){if(!SB)return;const{data}=await SB.auth.getSession();await setUser(data.session);SB.auth.onAuthStateChange((ev,s)=>{if(ev=='SIGNED_IN'||ev=='SIGNED_OUT')setUser(s)})}
+async function setUser(s){const was=ME&&ME.id;ME=null;if(s){const r=await SB.from('profiles').select('*').eq('id',s.user.id).maybeSingle();if(r.data)ME=r.data}nav();if((ME&&ME.id)!=was&&['auth','me','rank'].includes(view))go(view=='auth'?'me':view)}
+function auth(m){m=m||'in';const up=m=='up';app.innerHTML=`<h1>${up?'Criar <em>conta</em>':'<em>Entrar</em>'}</h1><div class="card"><p id="am" class="mu">Entre para salvar seus pontos no ranking mundial.</p>${up?'<label class="mu">Nome de usuário (3–20: letras, números, _)</label><input id="au" maxlength="20" autocomplete="username"><br><br>':''}<label class="mu">E-mail</label><input id="ae" type="email" autocomplete="email"><br><br><label class="mu">Senha (mín. 8 caracteres)</label><input id="ap" type="password" autocomplete="${up?'new':'current'}-password"><br><br><button class="btn" onclick="doAuth('${m}')">${up?'Criar conta':'Entrar'}</button> <button class="btn g" onclick="auth('${up?'in':'up'}')">${up?'Já tenho conta':'Criar conta'}</button><br><br><button class="btn g" onclick="google()">Continuar com Google</button></div>`}
+async function doAuth(m){const msg=t=>$('am').textContent=t,e=$('ae').value.trim(),p=$('ap').value;if(!SB)return msg('Servidor não configurado.');if(p.length<8)return msg('A senha precisa ter ao menos 8 caracteres.');
+if(m=='up'){const u=$('au').value.trim();if(!/^[A-Za-z0-9_]{3,20}$/.test(u))return msg('Nome de usuário inválido (3–20: letras, números, _).');const r=await SB.auth.signUp({email:e,password:p,options:{data:{username:u}}});if(r.error)return msg(r.error.message);if(!r.data.session)msg('Conta criada! Confirme seu e-mail para entrar.')}
+else{const r=await SB.auth.signInWithPassword({email:e,password:p});if(r.error)msg('E-mail ou senha incorretos.')}}
+async function google(){if(SB)await SB.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}})}
+async function logout(){await SB.auth.signOut();ME=null;nav();go('home')}
+async function startOnline(){app.innerHTML='<p class="mu">Carregando partida…</p>';const r=await SB.rpc('start_match',{p_mode:pick.mode,p_cat:pick.cat});
+if(r.error){app.innerHTML=`<div class="card"><p>${em(r.error)}</p><button class="btn g" onclick="go('play')">Voltar</button></div>`;return}const d=r.data;
+G={qs:d.questions.map(q=>[q.cat,q.diff,q.q,q.options,-1,'',q.visual,q.id]),i:0,score:0,ok:0,streak:0,maxS:0,mode:pick.mode,cat:pick.cat,t0:Date.now(),lock:false,T:d.timer,mid:d.match_id};view='quiz';nav();ask()}
+async function ansOnline(i){const q=G.qs[G.i],ms=Math.round((G.T-G.t)*1000);const x=await SB.rpc('answer_question',{p_match:G.mid,p_q:q[7],p_choice:i,p_ms:ms});
+if(x.error){$('ex').innerHTML=`<div class="exp">⚠️ ${em(x.error)}</div><br><button class="btn" onclick="go('home')">Sair</button>`;return}const r=x.data;
+if(r.correct){G.ok++;G.streak++;G.maxS=Math.max(G.maxS,G.streak)}else G.streak=0;G.score+=r.points;
+document.querySelectorAll('.opt').forEach(b=>{const k=+b.dataset.i;if(k==r.answer)b.classList.add('ok');else if(k==i)b.classList.add('no')});
+const last=G.i+1>=G.qs.length||(G.mode=='sobrevivencia'&&!r.correct);
+$('ex').innerHTML=`<div class="exp">${i<0?'⏰ Tempo esgotado. ':r.correct?'✅ Correto! ':'❌ Errou. '}${r.explanation||''}</div><br><button class="btn" onclick="${last?'finish()':'G.i++;ask()'}">${last?'Ver resultado':'Próxima'}</button>`}
+async function finishOnline(){const x=await SB.rpc('finish_match',{p_match:G.mid});if(x.error){app.innerHTML=`<div class="card"><p>${em(x.error)}</p><button class="btn g" onclick="go('home')">Início</button></div>`;return}const d=x.data,old=ME.best_score;
+const p=await SB.from('profiles').select('*').eq('id',ME.id).single();if(p.data)ME=p.data;nav();
+app.innerHTML=`<div class="big">${d.correct==d.answered?'🏆':d.correct/d.answered>.6?'⚽':'🥅'}</div><h1 style="text-align:center">${d.score} <em>pts</em></h1><p class="mu" style="text-align:center">${d.correct}/${d.answered} acertos · maior sequência ${d.max_streak} · +${d.xp_gained} XP${d.score>old&&old>0?' · 🎉 NOVO RECORDE!':''}<br>✅ Salvo no ranking mundial</p><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><button class="btn" onclick="start()">Jogar de novo</button><button class="btn g" onclick="share(${d.score},${d.correct},${d.answered})">Compartilhar</button><button class="btn g" onclick="go('rank')">Ranking</button></div>`}
+async function rankSB(){const el=$('gl');if(!el)return;try{const r=await Promise.all(['global','weekly'].map(p=>SB.rpc('get_leaderboard',{p_period:p,p_limit:50})));if(r[0].error)throw r[0].error;const L={g:r[0].data||[],w:(r[1].data||[])};
+const draw=t=>{el.innerHTML=(ME?'':'<p class="mu">🔒 <a href="#" style="color:var(--lime)" onclick="go(\'auth\');return false">Entre</a> para aparecer no ranking.</p>')+`<div class="chips"><button class="chip ${t=='g'?'sel':''}" onclick="G2('g')">Global</button><button class="chip ${t=='w'?'sel':''}" onclick="G2('w')">Semanal</button></div>`+(L[t].length?L[t].map(x=>`<div class="row"><span class="pos p${x.pos}">${x.pos}</span><div style="flex:1"><b>${esc(x.username)}${ME&&x.username==ME.username?' (você)':''}</b><div class="mu">Nv ${lvl(x.xp)} · ${x.games} partidas</div></div><b style="color:var(--lime)">${x.score}</b></div>`).join(''):'<p class="mu">Ninguém ainda. Seja o primeiro!</p>')};window.G2=draw;draw('g')}catch(e){el.innerHTML='<p class="mu">Não foi possível carregar o ranking agora.</p>'}}
+async function meOnline(){const r=await SB.from('matches').select('*').not('finished_at','is',null).order('started_at',{ascending:false}).limit(50),h=r.data||[];
+const l=lvl(ME.xp),nx=LV[l]||null,ps={xp:ME.xp,games:h.map(g=>({ok:g.correct,n:g.answered,streak:g.max_streak,score:g.score}))},ap=ME.answered?Math.round(ME.correct/ME.answered*100):0;
+app.innerHTML=`<h1>Seu <em>perfil</em></h1><div class="card"><p><b>${esc(ME.username)}</b> · Nível ${l} · ${ME.xp} XP${nx?` · faltam ${nx-ME.xp} para o nível ${l+1}`:''}</p><div class="bar"><i style="width:${nx?Math.min(100,(ME.xp-LV[l-1])/(nx-LV[l-1])*100):100}%"></i></div><br><label class="mu">Alterar nome de usuário</label><input id="nm" value="${esc(ME.username)}" maxlength="20"><br><br><button class="btn g" onclick="rename()">Salvar nome</button> <span id="nmm" class="mu"></span></div>
+<h2>Recordes e estatísticas</h2><div class="stats"><div class="card stat"><b>${ME.best_score}</b>melhor pontuação</div><div class="card stat"><b>${ME.best_streak}</b>maior sequência</div><div class="card stat"><b>${ME.games}</b>partidas</div><div class="card stat"><b>${ap}%</b>aproveitamento</div></div>
+<h2>Conquistas</h2><div>${ACH.map(a=>`<span class="badge ${a[2](ps)?'':'off'}" title="${a[1]}">🏅 ${a[0]}</span>`).join('')}</div><h2>Histórico</h2><div class="card">${h.slice(0,10).map(g=>`<div class="row"><div style="flex:1"><b>${g.score} pts</b><div class="mu">${MODES[g.mode][0]} · ${new Date(g.started_at).toLocaleDateString('pt-BR')}</div></div><span class="mu">${g.correct}/${g.answered}</span></div>`).join('')||'<p class="mu">Nenhuma partida ainda.</p>'}</div>`}
+async function rename(){const n=$('nm').value.trim(),r=await SB.rpc('set_username',{p_name:n});$('nmm').textContent=r.error?'Nome inválido ou já em uso.':'Salvo!';if(!r.error){ME.username=n;nav()}}
+initAuth();
+go('home');
+</script></body></html>
